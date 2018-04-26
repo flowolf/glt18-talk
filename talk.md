@@ -319,6 +319,140 @@ note: quartz crystal to keep time. DS1307 (I2C clock)
 
 
 
+# Clock
+```python
+class clock():
+  self.words = {  
+      "es":0, "ist":3,
+      "fünf_pre":7, "zehn_pre":11, "zwanzig":15,
+      "dreiviertel":22, "viertel":26,
+      "vor":33, "über":36, "nach":40,
+      "halb":44,
+      # ...
+      "zehn":93,
+      "uhr":107}
+```
+
+
+```python
+# arrow == great time lib
+# class clock
+  def get_time(self):
+      now = arrow.now()
+      hour = now.hour
+      minute = now.minute
+      second = now.second
+      return (hour, minute, second)
+```
+
+
+```python
+# class clock
+  def show_time(self,h,m,val=DEFAULT_COLOR):
+      """show time on matrix, expects int for h and m"""
+      full = False # exactly full hour
+      string = "es ist "
+      h = h%12
+      # minute
+      if m >= 5 and m < 10:
+          string += "fünf nach "
+      if m >= 10 and m < 15:
+          string += "zehn nach "
+      if m >= 15 and m < 20:
+          string += "viertel "
+          h = (h+1)%12
+      if m >= 20 and m < 25:
+          string += "zwanzig nach "
+      if m >= 25 and m < 30:
+          string += "fünf vor halb "
+          h = (h+1)%12
+      if m >= 30 and m < 35:
+          string += "halb "
+          h = (h+1)%12
+      if m >= 35 and m < 40:
+          string += "fünf nach halb "
+          h = (h+1)%12
+      if m >= 40 and m < 45:
+          string += "zwanzig vor "
+          h = (h+1)%12
+      if m >= 45 and m < 50:
+          string += "dreiviertel "
+          h = (h+1)%12
+      if m >= 50 and m < 55:
+          string += "zehn vor "
+          h = (h+1)%12
+      if m >= 55 and m <= 59:
+          string += "fünf vor "
+          h = (h+1)%12
+      if m >= 0 and m < 5:
+          full = True
+
+      hourstrings = [ "zwölf",
+                      "ein",
+                      "zwei",
+                      "drei",
+                      "vier",
+                      "fünf",
+                      "sechs",
+                      "sieben",
+                      "acht",
+                      "neun",
+                      "zehn",
+                      "elf",
+                      "zwölf"]
+      string += hourstrings[h%12]
+      if h == 1 and not full:
+              string += "s"
+      if full:
+          string += " uhr"
+      self.show_time_str(string,m%5,val)
+```
+
+
+```python
+# class clock
+  def show_time_str(self,string,minutes=0,val=DEFAULT_COLOR):
+      self.d.clear(show=False) # clear but don't update
+
+      # clear buffer
+      self.clear_buffer()
+
+      string = string.lower()
+      string = string.strip()
+      str_words = string.split()
+      if "es ist zehn vor" in string or\
+         "es ist fünf vor" in string or\
+         "es ist zehn nach" in string or\
+         "es ist fünf nach" in string:
+          # first zehn or fünf is pre
+          str_words[2] += "_pre"
+
+      for word in str_words:
+          if "_pre" in word:
+              length = len(word) - 4
+          else:
+              length = len(word)
+          self.set_word(self.words[word],length,val)
+      self.set_minutes(minutes,val)
+      self.write_words()
+      self.d.show()
+
+```
+
+
+```python
+# class clock
+  def set_word(self,z,length,val=DEFAULT_COLOR):
+      """gets z coordinate (like in array) and length,
+         optional val for color"""
+      for i in range(0,length):
+          x = z%self.d.WIDTH+i
+          y = z//self.d.WIDTH
+          self.buffer[x][y] = val
+```
+
+
+
 # TODO
 
 - try different ESP8266, ESP32 boards
